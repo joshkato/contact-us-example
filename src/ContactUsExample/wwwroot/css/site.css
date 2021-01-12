@@ -1,0 +1,106 @@
+html, body {
+    color: #4a4a4a;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+h1 {
+    font-family: Arial;
+    font-size: 38px;
+    font-weight: bold;
+}
+
+label {
+    font-family: Arial;
+    font-size: 16px;
+    display: block;
+}
+
+button.submit {
+    background: #0087aa;
+    border: none;
+    color: #fff;
+    padding: 5px;
+    text-align: center;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+button.submit:hover {
+    background: #1997b7;
+}
+
+a, .btn-link {
+    color: #0366d6;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.control-group {
+    margin-bottom: 25px;
+}
+
+.form-control {
+    background: #fff;
+    border: 3px solid #0087aa;
+    border-radius: 5px;
+    display: inline-block;
+    font-family: Arial;
+    font-size: 16px;
+    width: 100%;
+}
+
+input.form-control[type=text] {
+    line-height: 36px;
+    padding: 0 5px;
+    margin: 0;
+}
+
+    input.form-control:focus {
+        outline: none;
+    }
+
+textarea.form-control {
+    max-width: 100%;
+    min-height: calc(36px * 3);
+    resize: vertical;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid red;
+}
+
+.validation-message {
+    color: red;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 25% 50% 25%;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
