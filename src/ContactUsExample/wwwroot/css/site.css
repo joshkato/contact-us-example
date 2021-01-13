@@ -25,9 +25,14 @@ button.submit {
     width: 100%;
 }
 
-button.submit:hover {
-    background: #1997b7;
-}
+    button.submit:disabled {
+        background: #205C6B;
+        cursor: not-allowed;
+    }
+
+    button.submit:hover:not([disabled]) {
+        background: #1997b7;
+    }
 
 a, .btn-link {
     color: #0366d6;
@@ -41,6 +46,12 @@ a, .btn-link {
 
 .control-group {
     margin-bottom: 25px;
+}
+
+.response-panel {
+    background: #eee;
+    border-radius: 5px;
+    padding: 10px;
 }
 
 .form-control {
@@ -84,6 +95,14 @@ textarea.form-control {
 .main-content {
     display: grid;
     grid-template-columns: 25% 50% 25%;
+}
+
+.error-text-hidden {
+    visibility: collapse;
+}
+
+.error-text-visible {
+    visibility: visible;
 }
 
 #blazor-error-ui {

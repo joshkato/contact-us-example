@@ -1,26 +1,116 @@
+@using System.Net.Mail
 <h1>Contact Us</h1>
-<form>
-    <div class="control-group">
-        <label>First Name</label>
-        <input type="text" class="form-control" />
+@if (!IsSubmitting)
+{
+    <div>
+        <div class="control-group">
+            <label>First Name</label>
+            <input type="text" class="form-control" @bind="FirstName" @onkeypress="HandleFieldKeyPressed" />
+        </div>
+        <div class="control-group">
+            <label>Last Name</label>
+            <input type="text" class="form-control" @bind="LastName" @onkeypress="HandleFieldKeyPressed" />
+        </div>
+        <div class="control-group">
+            <label>Email</label>
+            <input type="text" class="form-control" @bind="Email" @onkeypress="HandleFieldKeyPressed" />
+            <div class="@EmailErrorTextClass">
+                <span style="color: red;">A valid email address must be provided. Example: user@domain.com</span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Message</label>
+            <textarea class="form-control" @bind="Message"></textarea>
+        </div>
+        <div class="control-group">
+            <button class="submit" @onclick="SubmitAsync" disabled="@(!CanSubmit())">Submit</button>
+        </div>
     </div>
-    <div class="control-group">
-        <label>Last Name</label>
-        <input type="text" class="form-control" />
+}
+else
+{
+    <div class="response-panel">
+        <p>Thanks for your feedback!</p>
+        <p style="font-style: italic">You will be taken back to the &quot;Contact Us&quot; form in a moment.</p>
     </div>
-    <div class="control-group">
-        <label>Email</label>
-        <input type="text" class="form-control" />
-    </div>
-    <div class="control-group">
-        <label>Message</label>
-        <textarea class="form-control"></textarea>
-    </div>
-    <div class="control-group">
-        <button class="submit">Submit</button>
-    </div>
-</form>
-
+}
 @code {
 
+    private const string CLASS_ERROR_TEXT_HIDDEN = "error-text-hidden";
+    private const string CLASS_ERROR_TEXT_VISIBLE = "error-text-visible";
+    private const string KEY_ENTER = "Enter";
+
+    public string EmailErrorTextClass { get; set; } = CLASS_ERROR_TEXT_HIDDEN;
+
+    public bool IsSubmitting { get; private set; } = false;
+
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public string Email { get; set; }
+
+    public string Message { get; set; }
+
+    protected bool CanSubmit() => !string.IsNullOrWhiteSpace(FirstName) &&
+                                  !string.IsNullOrWhiteSpace(LastName) &&
+                                  !string.IsNullOrWhiteSpace(Email) &&
+                                  !string.IsNullOrWhiteSpace(Message);
+
+    protected async Task HandleFieldChanged(ChangeEventArgs args)
+    {
+        await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    protected async Task HandleFieldKeyPressed(KeyboardEventArgs args)
+    {
+        if (!args.Key.Equals(KEY_ENTER, StringComparison.InvariantCultureIgnoreCase))
+            return;
+
+        if (!CanSubmit())
+            return;
+
+        await SaveFormData().ConfigureAwait(false);
+    }
+
+    protected Task SubmitAsync(MouseEventArgs args) => SaveFormData();
+
+    private async Task SaveFormData()
+    {
+        if (IsEmailValid())
+            EmailErrorTextClass = CLASS_ERROR_TEXT_HIDDEN;
+        else
+        {
+            EmailErrorTextClass = CLASS_ERROR_TEXT_VISIBLE;
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            await Task.Delay(3000).ConfigureAwait(false);
+        }
+        finally
+        {
+            IsSubmitting = false;
+            ClearFields();
+        }
+    }
+
+    private void ClearFields()
+    {
+        FirstName = "";
+        LastName = "";
+        Email = "";
+        Message = "";
+    }
+
+    private bool IsEmailValid()
+    {
+        // Basically, we're going to use MailAddress to do our email address parsing for us.
+        // While a regex could be used here, this is probably going to be more accurate than
+        // a regex. The exact logic this will eventually call through to can be found here:
+        // https://source.dot.net/#System.Net.Mail/System/Net/Mail/MailAddress.cs,3259fec607302576,references
+        return MailAddress.TryCreate(Email, out _);
+    }
 }
