@@ -54,6 +54,21 @@ a, .btn-link {
     padding: 10px;
 }
 
+.error-panel {
+    background: #eee;
+    border-radius: 5px;
+    color: red;
+    padding: 10px;
+}
+
+    .error-panel.detail {
+        color: #4a4a4a;
+    }
+
+    .error-panel.dismiss {
+        color: #000;
+    }
+
 .form-control {
     background: #fff;
     border: 3px solid #0087aa;

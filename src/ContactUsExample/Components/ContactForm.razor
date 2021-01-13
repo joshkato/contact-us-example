@@ -1,6 +1,11 @@
 @using System.Net.Mail
+@using ContactUsExample.Models
+@using ContactUsExample.Services
+@using Microsoft.Extensions.Hosting
+@inject IHostEnvironment HostEnv
+@inject IContactUsService ContactUs
 <h1>Contact Us</h1>
-@if (!IsSubmitting)
+@if (!ShowThankYou)
 {
     <div>
         <div class="control-group">
@@ -14,9 +19,12 @@
         <div class="control-group">
             <label>Email</label>
             <input type="text" class="form-control" @bind="Email" @onkeypress="HandleFieldKeyPressed" />
-            <div class="@EmailErrorTextClass">
-                <span style="color: red;">A valid email address must be provided. Example: user@domain.com</span>
-            </div>
+            @if (EmailIsValid != null && !EmailIsValid.Value)
+            {
+                <div class="validation-message">
+                    <span>A valid email address must be provided. Example: user@domain.com</span>
+                </div>
+            }
         </div>
         <div class="control-group">
             <label>Message</label>
@@ -25,13 +33,35 @@
         <div class="control-group">
             <button class="submit" @onclick="SubmitAsync" disabled="@(!CanSubmit())">Submit</button>
         </div>
+        @if (PreviousError != null)
+        {
+            <div class="error-panel">
+                <div style="float: right">
+                    <button class="dismiss" @onclick="DismissError">⨉</button>
+                </div>
+                <p>@PreviousError.Message</p>
+                @* We only want to include details (exception information) when we're running in development mode. *@
+                @if (HostEnv.IsDevelopment() && PreviousError.Exception != null)
+                {
+                    <div class="detail">
+                        <h3>@(PreviousError.Exception.GetType().Name)</h3>
+                        <p>@PreviousError.Exception.Message</p>
+                        <div class="stacktrace">
+                            <pre><code>@PreviousError.Exception.StackTrace</code></pre>
+                        </div>
+                    </div>
+                }
+                
+            </div>
+        }
     </div>
 }
 else
 {
     <div class="response-panel">
-        <p>Thanks for your feedback!</p>
+        <p>Thank for your feedback!</p>
         <p style="font-style: italic">You will be taken back to the &quot;Contact Us&quot; form in a moment.</p>
+        @* For now this will suffice for feedback. But some kind of timeout indicator and a button to immediately return to the contact us form would be good improvements.  *@
     </div>
 }
 @code {
@@ -42,7 +72,7 @@ else
 
     public string EmailErrorTextClass { get; set; } = CLASS_ERROR_TEXT_HIDDEN;
 
-    public bool IsSubmitting { get; private set; } = false;
+    public bool ShowThankYou { get; private set; } = false;
 
     public string FirstName { get; set; }
 
@@ -50,12 +80,16 @@ else
 
     public string Email { get; set; }
 
+    public bool? EmailIsValid { get; private set; } = null;
+
     public string Message { get; set; }
 
     protected bool CanSubmit() => !string.IsNullOrWhiteSpace(FirstName) &&
                                   !string.IsNullOrWhiteSpace(LastName) &&
                                   !string.IsNullOrWhiteSpace(Email) &&
                                   !string.IsNullOrWhiteSpace(Message);
+
+    private IServiceError PreviousError { get; set; } = null;
 
     protected async Task HandleFieldChanged(ChangeEventArgs args)
     {
@@ -77,24 +111,32 @@ else
 
     private async Task SaveFormData()
     {
-        if (IsEmailValid())
-            EmailErrorTextClass = CLASS_ERROR_TEXT_HIDDEN;
-        else
+        // Clear the previous error before making our submission.
+
+        // Verify the email address.
+        EmailIsValid = IsEmailValid();
+        if (EmailIsValid == null || !EmailIsValid.Value)
+            return;
+
+        var message = new ContactUsMessage
         {
-            EmailErrorTextClass = CLASS_ERROR_TEXT_VISIBLE;
+            FirstName = FirstName,
+            LastName = LastName,
+            Email = Email,
+            Message = Message,
+        };
+
+        var error = await ContactUs.SubmitMessageAsync(message).ConfigureAwait(false);
+        if (error != null)
+        {
+            PreviousError = error;
             return;
         }
 
-        IsSubmitting = true;
-        try
-        {
-            await Task.Delay(3000).ConfigureAwait(false);
-        }
-        finally
-        {
-            IsSubmitting = false;
-            ClearFields();
-        }
+        ShowThankYou = true;
+        await Task.Delay(3000).ConfigureAwait(false);
+        ClearFields();
+        ShowThankYou = false;
     }
 
     private void ClearFields()
@@ -103,6 +145,11 @@ else
         LastName = "";
         Email = "";
         Message = "";
+    }
+
+    private void DismissError()
+    {
+        PreviousError = null;
     }
 
     private bool IsEmailValid()
