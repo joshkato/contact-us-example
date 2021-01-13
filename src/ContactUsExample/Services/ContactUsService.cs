@@ -1,5 +1,6 @@
+using System;
 using System.Net.Mail;
-using System.Threading.Tasks;
+using ContactUsExample.Data;
 using ContactUsExample.Models;
 using Microsoft.Extensions.Logging;
 
@@ -7,29 +8,43 @@ namespace ContactUsExample.Services
 {
     public interface IContactUsService
     {
-        ValueTask<IServiceError> SubmitMessageAsync(ContactUsMessage message);
+        IServiceError SubmitMessageAsync(ContactUsMessage message);
     }
 
     public class ContactUsService : IContactUsService
     {
         private ILogger Log { get; }
 
-        public ContactUsService(ILogger<ContactUsService> logger)
+        private IContactUsMessageRepository ContactUsMessages { get; }
+
+        public ContactUsService(ILogger<ContactUsService> logger, IContactUsMessageRepository contactUsMessagesRepo)
         {
             Log = logger;
+            ContactUsMessages = contactUsMessagesRepo;
         }
 
-        public async ValueTask<IServiceError> SubmitMessageAsync(ContactUsMessage message)
+        public IServiceError SubmitMessageAsync(ContactUsMessage message)
         {
-            Log.LogDebug("Validating incoming message...");
+            Log.LogDebug("[ID: {messageId}] Validating incoming message...", message.Id);
             var validationError = ValidateMessage(message);
             if (validationError != null)
                 return validationError;
 
-            Log.LogDebug("Saving message...");
-            // TODO: Implement actually saving the message.
+            try
+            {
+                Log.LogDebug("[ID: {messageId}] Saving message...", message.Id);
+                ContactUsMessages.SaveMessage(message);
+                Log.LogDebug("[ID: {messageId}] Message saved.", message.Id);
+            }
+            catch (Exception ex)
+            {
+                Log.LogError(ex, "Failed to save 'Contact Us' message with ID {id}. " +
+                                 "Refer to the exception for more information.",
+                    message.Id);
 
-            await Task.CompletedTask.ConfigureAwait(false);
+                return new ServiceError("Failed to save message.", ex);
+            }
+
             return null;
         }
 

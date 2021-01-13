@@ -10,15 +10,18 @@
     <div>
         <div class="control-group">
             <label>First Name</label>
-            <input type="text" class="form-control" @bind="FirstName" @onkeypress="HandleFieldKeyPressed" />
+            <input type="text" class="form-control" tabindex="1"
+                   @bind="FirstName" @onkeypress="HandleFieldKeyPressed" />
         </div>
         <div class="control-group">
             <label>Last Name</label>
-            <input type="text" class="form-control" @bind="LastName" @onkeypress="HandleFieldKeyPressed" />
+            <input type="text" class="form-control" tabindex="2"
+                   @bind="LastName" @onkeypress="HandleFieldKeyPressed" />
         </div>
         <div class="control-group">
             <label>Email</label>
-            <input type="text" class="form-control" @bind="Email" @onkeypress="HandleFieldKeyPressed" />
+            <input type="text" class="form-control" tabindex="3"
+                   @bind="Email" @onkeypress="HandleFieldKeyPressed" />
             @if (EmailIsValid != null && !EmailIsValid.Value)
             {
                 <div class="validation-message">
@@ -28,10 +31,10 @@
         </div>
         <div class="control-group">
             <label>Message</label>
-            <textarea class="form-control" @bind="Message"></textarea>
+            <textarea class="form-control" tabindex="4" @bind="Message"></textarea>
         </div>
         <div class="control-group">
-            <button class="submit" @onclick="SubmitAsync" disabled="@(!CanSubmit())">Submit</button>
+            <button class="submit" tabindex="5" @onclick="SubmitAsync" disabled="@(!CanSubmit)">Submit</button>
         </div>
         @if (PreviousError != null)
         {
@@ -84,24 +87,21 @@ else
 
     public string Message { get; set; }
 
-    protected bool CanSubmit() => !string.IsNullOrWhiteSpace(FirstName) &&
-                                  !string.IsNullOrWhiteSpace(LastName) &&
-                                  !string.IsNullOrWhiteSpace(Email) &&
-                                  !string.IsNullOrWhiteSpace(Message);
+    protected bool CanSubmit =>!string.IsNullOrWhiteSpace(FirstName) &&
+                               !string.IsNullOrWhiteSpace(LastName) &&
+                               !string.IsNullOrWhiteSpace(Email) &&
+                               !string.IsNullOrWhiteSpace(Message);
 
     private IServiceError PreviousError { get; set; } = null;
 
-    protected async Task HandleFieldChanged(ChangeEventArgs args)
-    {
-        await Task.CompletedTask.ConfigureAwait(false);
-    }
-
     protected async Task HandleFieldKeyPressed(KeyboardEventArgs args)
     {
+        StateHasChanged();
+
         if (!args.Key.Equals(KEY_ENTER, StringComparison.InvariantCultureIgnoreCase))
             return;
 
-        if (!CanSubmit())
+        if (!CanSubmit)
             return;
 
         await SaveFormData().ConfigureAwait(false);
@@ -112,6 +112,7 @@ else
     private async Task SaveFormData()
     {
         // Clear the previous error before making our submission.
+        PreviousError = null;
 
         // Verify the email address.
         EmailIsValid = IsEmailValid();
@@ -126,7 +127,7 @@ else
             Message = Message,
         };
 
-        var error = await ContactUs.SubmitMessageAsync(message).ConfigureAwait(false);
+        var error = ContactUs.SubmitMessageAsync(message);
         if (error != null)
         {
             PreviousError = error;
@@ -154,6 +155,9 @@ else
 
     private bool IsEmailValid()
     {
+        if (string.IsNullOrWhiteSpace(Email))
+            return false;
+
         // Basically, we're going to use MailAddress to do our email address parsing for us.
         // While a regex could be used here, this is probably going to be more accurate than
         // a regex. The exact logic this will eventually call through to can be found here:
