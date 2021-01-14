@@ -43,7 +43,7 @@
                     <button class="dismiss" @onclick="DismissError">⨉</button>
                 </div>
                 <p>@PreviousError.Message</p>
-                @* We only want to include details (exception information) when we're running in development mode. *@
+                @* Only include exception information when running in development mode. *@
                 @if (HostEnv.IsDevelopment() && PreviousError.Exception != null)
                 {
                     <div class="detail">
