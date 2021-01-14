@@ -32,6 +32,8 @@ namespace ContactUsExample.Services
 
             try
             {
+                message.SubmittedAt = DateTime.Now;
+
                 Log.LogDebug("[ID: {messageId}] Saving message...", message.Id);
                 ContactUsMessages.SaveMessage(message);
                 Log.LogDebug("[ID: {messageId}] Message saved.", message.Id);

@@ -14,6 +14,8 @@ namespace ContactUsExample.Models
 
         public string Email { get; set; } = "";
 
-        public string Message { get; set; }
+        public string Message { get; set; } = "";
+
+        public DateTime SubmittedAt { get; set; }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using ContactUsExample.Models;
 using LiteDB;
 
@@ -21,7 +20,10 @@ namespace ContactUsExample.Data
 
         public Guid SaveMessage(ContactUsMessage message)
         {
-            return Guid.Empty;
+            var messages = Db.GetCollection<ContactUsMessage>();
+            messages.Insert(message.Id, message);
+
+            return message.Id;
         }
     }
 }

@@ -11,17 +11,17 @@
         <div class="control-group">
             <label>First Name</label>
             <input type="text" class="form-control" tabindex="1"
-                   @bind="FirstName" @onkeypress="HandleFieldKeyPressed" />
+                   @bind="FirstName" @bind:event="oninput" @onkeypress="HandleFieldKeyPressed" />
         </div>
         <div class="control-group">
             <label>Last Name</label>
             <input type="text" class="form-control" tabindex="2"
-                   @bind="LastName" @onkeypress="HandleFieldKeyPressed" />
+                   @bind="LastName" @bind:event="oninput"  @onkeypress="HandleFieldKeyPressed" />
         </div>
         <div class="control-group">
             <label>Email</label>
             <input type="text" class="form-control" tabindex="3"
-                   @bind="Email" @onkeypress="HandleFieldKeyPressed" />
+                   @bind="Email" @bind:event="oninput" @onkeypress="HandleFieldKeyPressed" />
             @if (EmailIsValid != null && !EmailIsValid.Value)
             {
                 <div class="validation-message">
@@ -31,7 +31,7 @@
         </div>
         <div class="control-group">
             <label>Message</label>
-            <textarea class="form-control" tabindex="4" @bind="Message"></textarea>
+            <textarea class="form-control" tabindex="4" @bind="Message" @bind:event="oninput" @onkeypress="HandleMessageFieldKeyPressed"></textarea>
         </div>
         <div class="control-group">
             <button class="submit" tabindex="5" @onclick="SubmitAsync" disabled="@(!CanSubmit)">Submit</button>
@@ -105,6 +105,17 @@ else
             return;
 
         await SaveFormData().ConfigureAwait(false);
+    }
+
+    protected async Task HandleMessageFieldKeyPressed(KeyboardEventArgs args)
+    {
+        StateHasChanged();
+
+        if ((args.Key.Equals(KEY_ENTER, StringComparison.InvariantCultureIgnoreCase) || args.Key.Equals("\n")) &&
+            args.CtrlKey)
+        {
+            await SaveFormData().ConfigureAwait(false);
+        }
     }
 
     protected Task SubmitAsync(MouseEventArgs args) => SaveFormData();
