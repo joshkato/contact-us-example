@@ -9,3 +9,5 @@ A simple contact us for example.
 ## Additional Information
 
 The storage backend for this application relies on [LiteDB](https://www.litedb.org/). [LiteDB.Studio](https://github.com/mbdavid/LiteDB.Studio/releases) can be used view content in the database file.
+
+A seperate page is also available to view recently submitted messages.

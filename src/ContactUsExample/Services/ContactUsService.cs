@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Mail;
 using ContactUsExample.Data;
 using ContactUsExample.Models;
@@ -8,7 +9,9 @@ namespace ContactUsExample.Services
 {
     public interface IContactUsService
     {
-        IServiceError SubmitMessageAsync(ContactUsMessage message);
+        (List<ContactUsMessage>, IServiceError) GetRecentMessages();
+
+        IServiceError SubmitMessage(ContactUsMessage message);
     }
 
     public class ContactUsService : IContactUsService
@@ -23,7 +26,26 @@ namespace ContactUsExample.Services
             ContactUsMessages = contactUsMessagesRepo;
         }
 
-        public IServiceError SubmitMessageAsync(ContactUsMessage message)
+        public (List<ContactUsMessage>, IServiceError) GetRecentMessages()
+        {
+            const int count = 10;
+            Log.LogDebug("Retrieving top {count} messages...", count);
+
+            List<ContactUsMessage> messages;
+            try
+            {
+                messages = ContactUsMessages.GetTopMessages(count);
+            }
+            catch (Exception ex)
+            {
+                Log.LogError(ex, "Failed to retrieve top {count} messages.", count);
+                return (null, new ServiceError("Failed to retrieve recent messages.", ex));
+            }
+
+            return (messages, null);
+        }
+
+        public IServiceError SubmitMessage(ContactUsMessage message)
         {
             Log.LogDebug("[ID: {messageId}] Validating incoming message...", message.Id);
             var validationError = ValidateMessage(message);
