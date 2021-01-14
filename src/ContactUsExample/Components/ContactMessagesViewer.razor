@@ -1,0 +1,63 @@
+@using ContactUsExample.Services
+@using ContactUsExample.Models
+@inject IContactUsService ContactUs;
+<h1>Submitted Messages</h1>
+@if (PreviousError == null)
+{
+    <div>
+        <table style="width: 100%">
+            <tr>
+                <th>Name</th>
+                <th>Submitted At</th>
+                <th>Message</th>
+            </tr>
+            @if (RecentMessages != null && RecentMessages.Any())
+            {
+                @foreach (var message in RecentMessages)
+                {
+                    <tr>
+                        <td>@($"{message.LastName}, {message.FirstName}")</td>
+                        <td>@message.SubmittedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@message.Message</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3">
+                        <span style="font-style: italic;">No recent messages.</span>
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+}
+else
+{
+    <div>
+        <p>Error!</p>
+    </div>
+}
+
+@code {
+
+    protected List<ContactUsMessage> RecentMessages { get; private set; }
+
+    private IServiceError PreviousError { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        var (messages, error) = ContactUs.GetRecentMessages();
+        if (error != null)
+        {
+            PreviousError = error;
+            return;
+        }
+
+        RecentMessages = messages;
+    }
+
+}

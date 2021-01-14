@@ -1,0 +1,178 @@
+@using System.Net.Mail
+@using ContactUsExample.Models
+@using ContactUsExample.Services
+@using Microsoft.Extensions.Hosting
+@inject IHostEnvironment HostEnv
+@inject IContactUsService ContactUs
+<h1>Contact Us</h1>
+@if (!ShowThankYou)
+{
+    <div>
+        <div class="control-group">
+            <label>First Name</label>
+            <input type="text" class="form-control" tabindex="1"
+                   @bind="FirstName" @bind:event="oninput" @onkeypress="HandleFieldKeyPressed" />
+        </div>
+        <div class="control-group">
+            <label>Last Name</label>
+            <input type="text" class="form-control" tabindex="2"
+                   @bind="LastName" @bind:event="oninput"  @onkeypress="HandleFieldKeyPressed" />
+        </div>
+        <div class="control-group">
+            <label>Email</label>
+            <input type="text" class="form-control" tabindex="3"
+                   @bind="Email" @bind:event="oninput" @onkeypress="HandleFieldKeyPressed" />
+            @if (EmailIsValid != null && !EmailIsValid.Value)
+            {
+                <div class="validation-message">
+                    <span>A valid email address must be provided. Example: user@domain.com</span>
+                </div>
+            }
+        </div>
+        <div class="control-group">
+            <label>Message</label>
+            <textarea class="form-control" tabindex="4" @bind="Message" @bind:event="oninput" @onkeypress="HandleMessageFieldKeyPressed"></textarea>
+        </div>
+        <div class="control-group">
+            <button class="submit" tabindex="5" @onclick="SubmitAsync" disabled="@(!CanSubmit)">Submit</button>
+        </div>
+        @if (PreviousError != null)
+        {
+            <div class="error-panel">
+                <div style="float: right">
+                    <button class="dismiss" @onclick="DismissError">⨉</button>
+                </div>
+                <p>@PreviousError.Message</p>
+                @* Only include exception information when running in development mode. *@
+                @if (HostEnv.IsDevelopment() && PreviousError.Exception != null)
+                {
+                    <div class="detail">
+                        <h3>@(PreviousError.Exception.GetType().Name)</h3>
+                        <p>@PreviousError.Exception.Message</p>
+                        <div class="stacktrace">
+                            <pre><code>@PreviousError.Exception.StackTrace</code></pre>
+                        </div>
+                    </div>
+                }
+                
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="response-panel">
+        <p>Thank for your feedback!</p>
+        <p style="font-style: italic">You will be taken back to the &quot;Contact Us&quot; form in a moment.</p>
+        @* For now this will suffice for feedback. But some kind of timeout indicator and a button to immediately return to the contact us form would be good improvements.  *@
+    </div>
+}
+@code {
+
+    private const string CLASS_ERROR_TEXT_HIDDEN = "error-text-hidden";
+    private const string CLASS_ERROR_TEXT_VISIBLE = "error-text-visible";
+    private const string KEY_ENTER = "Enter";
+
+    public string EmailErrorTextClass { get; set; } = CLASS_ERROR_TEXT_HIDDEN;
+
+    public bool ShowThankYou { get; private set; } = false;
+
+    public string FirstName { get; set; }
+
+    public string LastName { get; set; }
+
+    public string Email { get; set; }
+
+    public bool? EmailIsValid { get; private set; } = null;
+
+    public string Message { get; set; }
+
+    protected bool CanSubmit =>!string.IsNullOrWhiteSpace(FirstName) &&
+                               !string.IsNullOrWhiteSpace(LastName) &&
+                               !string.IsNullOrWhiteSpace(Email) &&
+                               !string.IsNullOrWhiteSpace(Message);
+
+    private IServiceError PreviousError { get; set; } = null;
+
+    protected async Task HandleFieldKeyPressed(KeyboardEventArgs args)
+    {
+        StateHasChanged();
+
+        if (!args.Key.Equals(KEY_ENTER, StringComparison.InvariantCultureIgnoreCase))
+            return;
+
+        if (!CanSubmit)
+            return;
+
+        await SaveFormData().ConfigureAwait(false);
+    }
+
+    protected async Task HandleMessageFieldKeyPressed(KeyboardEventArgs args)
+    {
+        StateHasChanged();
+
+        if ((args.Key.Equals(KEY_ENTER, StringComparison.InvariantCultureIgnoreCase) || args.Key.Equals("\n")) &&
+            args.CtrlKey)
+        {
+            await SaveFormData().ConfigureAwait(false);
+        }
+    }
+
+    protected Task SubmitAsync(MouseEventArgs args) => SaveFormData();
+
+    private async Task SaveFormData()
+    {
+        // Clear the previous error before making our submission.
+        PreviousError = null;
+
+        // Verify the email address.
+        EmailIsValid = IsEmailValid();
+        if (EmailIsValid == null || !EmailIsValid.Value)
+            return;
+
+        var message = new ContactUsMessage
+        {
+            FirstName = FirstName,
+            LastName = LastName,
+            Email = Email,
+            Message = Message,
+        };
+
+        var error = ContactUs.SubmitMessage(message);
+        if (error != null)
+        {
+            PreviousError = error;
+            return;
+        }
+
+        ShowThankYou = true;
+        await Task.Delay(3000).ConfigureAwait(false);
+        ClearFields();
+        ShowThankYou = false;
+    }
+
+    private void ClearFields()
+    {
+        FirstName = "";
+        LastName = "";
+        Email = "";
+        Message = "";
+    }
+
+    private void DismissError()
+    {
+        PreviousError = null;
+    }
+
+    private bool IsEmailValid()
+    {
+        if (string.IsNullOrWhiteSpace(Email))
+            return false;
+
+        // Basically, we're going to use MailAddress to do our email address parsing for us.
+        // While a regex could be used here, this is probably going to be more accurate than
+        // a regex. The exact logic this will eventually call through to can be found here:
+        // https://source.dot.net/#System.Net.Mail/System/Net/Mail/MailAddress.cs,3259fec607302576,references
+        return MailAddress.TryCreate(Email, out _);
+    }
+}
